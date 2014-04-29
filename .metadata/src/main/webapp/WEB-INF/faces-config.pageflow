@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pageflow:Pageflow xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:pageflow="http://www.sybase.com/suade/pageflow" id="pf13979683350540" configfile="/BuscadorLucene/src/main/webapp/WEB-INF/faces-config.xml">
+  <nodes xsi:type="pageflow:PFPage" name="index.xhtml" id="pf13979683478821" referenceLink="//@navigationRule.0/@fromViewId|" outlinks="pf13979694580394" path="/index.xhtml"/>
+  <nodes xsi:type="pageflow:PFPage" name="cl/usach/servicios/buscador/buscador.xhtml" x="240" y="168" id="pf13979694580395" referenceLink="//@navigationRule.0/@navigationCase.0/@toViewId|" inlinks="pf13979694580394" path="/cl/usach/servicios/buscador/buscador.xhtml"/>
+  <links id="pf13979694580394" target="pf13979694580395" source="pf13979683478821"/>
+</pageflow:Pageflow>
