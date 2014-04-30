@@ -17,6 +17,10 @@ public class Opinion {
 		this.loMejor = loMejor;
 		this.loPeor = loPeor;
 	}
+	
+	public Opinion () {
+		
+	}
 
 	public String getMarcaModelo () {
 		return this.marcaModelo;
