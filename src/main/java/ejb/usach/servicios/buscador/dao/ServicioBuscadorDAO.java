@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.es.SpanishAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -152,6 +154,41 @@ public class ServicioBuscadorDAO implements Serializable {
 			reader = DirectoryReader.open(index);
 			IndexSearcher searcher = new IndexSearcher(reader);
 
+			SpanishAnalyzer analyzer = new SpanishAnalyzer(Version.LUCENE_40);
+			
+			QueryParser qp = new QueryParser(Version.LUCENE_40, termino, analyzer);
+			 
+			Query query = qp.parse(strQuery);
+		
+			TopDocs tops = searcher.search(query, hitsPerPage);
+			scoreDoc = tops.scoreDocs;
+			for (ScoreDoc score : scoreDoc) {
+				Document d = searcher.doc(score.doc);
+				lista.add(docAdd(d));
+			}
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		} finally {
+			if (reader != null)
+				reader.close();
+		}
+		return lista;
+	}
+	
+	public static List<Opinion> getQueryWrapper(String termino,
+			String strQuery, int hitsPerPage) throws Exception {
+
+		ScoreDoc[] scoreDoc = null;
+		IndexReader reader = null;
+		List<Opinion> lista = new ArrayList<Opinion>();
+
+		try {
+			Directory index = FSDirectory.open(path);
+			reader = DirectoryReader.open(index);
+			IndexSearcher searcher = new IndexSearcher(reader);
+
+			Map<String, Analyzer> analyzerMap = new HashMap<String, Analyzer>();
+				   
 			SpanishAnalyzer analyzer = new SpanishAnalyzer(Version.LUCENE_40);
 			
 			QueryParser qp = new QueryParser(Version.LUCENE_40, termino, analyzer);
