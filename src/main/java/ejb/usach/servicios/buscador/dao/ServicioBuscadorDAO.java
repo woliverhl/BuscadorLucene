@@ -6,11 +6,15 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.es.SpanishAnalyzer;
+import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.IntField;
@@ -47,6 +51,8 @@ public class ServicioBuscadorDAO implements Serializable {
 
 	private static final String archivoOut = "out_opinion.txt";
 
+	private static final Version version = Version.LUCENE_40;
+	
 	private static final File path = new File(TablaValores.getValor(
 			tableParametros, "path", "destino"));
 
@@ -55,11 +61,11 @@ public class ServicioBuscadorDAO implements Serializable {
 
 		IndexWriter iwriter = null;
 		try {
-			SpanishAnalyzer analizador = new SpanishAnalyzer(Version.LUCENE_40);
+			SpanishAnalyzer analizador = new SpanishAnalyzer(version);
 			
 			Directory directorioIndex = new SimpleFSDirectory(new File(
 					TablaValores.getValor(tableParametros, "path", "destino")));
-			IndexWriterConfig config = new IndexWriterConfig(Version.LUCENE_40,
+			IndexWriterConfig config = new IndexWriterConfig(version,
 					analizador);
 			iwriter = new IndexWriter(directorioIndex, config);
 			List<Opinion> lista = getListaObjetoOpiniones();
@@ -154,9 +160,9 @@ public class ServicioBuscadorDAO implements Serializable {
 			reader = DirectoryReader.open(index);
 			IndexSearcher searcher = new IndexSearcher(reader);
 
-			SpanishAnalyzer analyzer = new SpanishAnalyzer(Version.LUCENE_40);
+			SpanishAnalyzer analyzer = new SpanishAnalyzer(version);
 			
-			QueryParser qp = new QueryParser(Version.LUCENE_40, termino, analyzer);
+			QueryParser qp = new QueryParser(version, termino, analyzer);
 			 
 			Query query = qp.parse(strQuery);
 		
@@ -188,11 +194,14 @@ public class ServicioBuscadorDAO implements Serializable {
 			IndexSearcher searcher = new IndexSearcher(reader);
 
 			Map<String, Analyzer> analyzerMap = new HashMap<String, Analyzer>();
-				   
-			SpanishAnalyzer analyzer = new SpanishAnalyzer(Version.LUCENE_40);
+			analyzerMap.put("IDNumber", new KeywordAnalyzer());
+			analyzerMap.put("IDNumber", new SpanishAnalyzer(version));
 			
-			QueryParser qp = new QueryParser(Version.LUCENE_40, termino, analyzer);
-			 
+			PerFieldAnalyzerWrapper _analyzer = new PerFieldAnalyzerWrapper(new StandardAnalyzer(version),analyzerMap); 
+			
+			SpanishAnalyzer analyzer = new SpanishAnalyzer(version);
+			
+			QueryParser qp = new QueryParser(version, termino, _analyzer);
 			Query query = qp.parse(strQuery);
 		
 			TopDocs tops = searcher.search(query, hitsPerPage);
