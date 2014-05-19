@@ -1,2 +1,3 @@
 path;origen=/export/usach/librerias/Opiniones;destino=/repositorio/sitioAutos/indexinvertido;
 archivo:path=out_opinion.txt
+error:001=El indice invertido no ha sido creado

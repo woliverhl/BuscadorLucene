@@ -10,11 +10,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.core.KeywordAnalyzer;
 import org.apache.lucene.analysis.es.SpanishAnalyzer;
 import org.apache.lucene.analysis.miscellaneous.PerFieldAnalyzerWrapper;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.util.CharArraySet;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.IntField;
@@ -37,7 +39,6 @@ import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.util.Version;
 
 import cl.infraestructura.util.TablaValores;
-import ejb.usach.servicios.buscador.ServicioBuscadorBean;
 import ejb.usach.servicios.buscador.to.Opinion;
 
 public class ServicioBuscadorDAO implements Serializable {
@@ -56,12 +57,23 @@ public class ServicioBuscadorDAO implements Serializable {
 	private static final File path = new File(TablaValores.getValor(
 			tableParametros, "path", "destino"));
 
+	private static ArrayList<Opinion> opinion_lst;
 	
-	public static void indexarDocumentos() throws Exception {
+	private static final Logger log = Logger
+			.getLogger(ServicioBuscadorDAO.class);
+	
+	public static void indexarDocumentos(CharArraySet stopWord) throws Exception {
 
 		IndexWriter iwriter = null;
 		try {
+			if (log.isDebugEnabled()){
+				log.debug("[ServicioBuscadorDAO][indexarDocumentos] Inicio");
+			}
 			SpanishAnalyzer analizador = new SpanishAnalyzer(version);
+			
+			if (stopWord != null){
+				analizador = new SpanishAnalyzer(version, stopWord);
+			}
 			
 			Directory directorioIndex = new SimpleFSDirectory(new File(
 					TablaValores.getValor(tableParametros, "path", "destino")));
@@ -69,25 +81,31 @@ public class ServicioBuscadorDAO implements Serializable {
 					analizador);
 			iwriter = new IndexWriter(directorioIndex, config);
 			List<Opinion> lista = getListaObjetoOpiniones();
+			if (log.isDebugEnabled()){
+				log.debug("[ServicioBuscadorDAO][indexarDocumentos] total lista: " + lista.size());
+			}
 			for (Opinion o : lista) {
 				addDoc(iwriter, o);
 			}
 		} catch (IOException ex) {
+			log.warn("[ServicioBuscadorDAO][indexarDocumentos] ERROR: " + ex.getMessage());
 			throw ex;
-
 		} catch (Exception e) {
-			e.printStackTrace();
+			log.warn("[ServicioBuscadorDAO][indexarDocumentos] ERROR: " + e.getMessage());
 			throw e;
 		} finally {
 			if (iwriter != null)
 				iwriter.close();
+			if (log.isDebugEnabled()){
+				log.debug("[ServicioBuscadorDAO][indexarDocumentos] Fin");
+			}
 		}
 	}
 
 	private static List<Opinion> getListaObjetoOpiniones() throws Exception {
 
-		List<Opinion> opinion_lst = new ArrayList<Opinion>();
-		String path = ServicioBuscadorBean.class.getClassLoader()
+		opinion_lst = new ArrayList<Opinion>();
+		String path = ServicioBuscadorDAO.class.getClassLoader()
 				.getResource(archivoOut).getPath();
 		if (path == null) {
 			throw new Exception(
@@ -99,17 +117,20 @@ public class ServicioBuscadorDAO implements Serializable {
 
 		try {
 			input = new BufferedReader(new FileReader(f));
-			while (input.ready()) {
-				opinion = new Opinion((input.readLine().split(":"))[1].trim(),
-						Integer.parseInt((input.readLine().split(":"))[1]
-								.trim()),
-						(input.readLine().split(":"))[1].trim(),
-						(input.readLine().split(":"))[1].trim(),
-						(input.readLine().split(":"))[1].trim(),
-						(input.readLine().split(":"))[1].trim());
-				input.readLine(); // empty line
+			while (input.ready ()) {
+				input.readLine (); //empty line
+				opinion = new Opinion (
+					(input.readLine ().split (":"))[1].trim (),
+					(input.readLine ().split (":"))[1].trim (),
+					Integer.parseInt((input.readLine ().split (":"))[1].trim ()),
+					(input.readLine ().split (":"))[1].trim (),
+					(input.readLine ().split (":"))[1].trim (),
+					(input.readLine ().split (":"))[1].trim (),
+					(input.readLine ().split (":"))[1].trim ());
+				input.readLine (); //empty line
 
-				opinion_lst.add(opinion);
+				if (exist (opinion) == 0) 
+					opinion_lst.add (opinion);
 			}
 
 		} catch (IOException ioEx) {
@@ -222,25 +243,43 @@ public class ServicioBuscadorDAO implements Serializable {
 	private static void addDoc(IndexWriter w, Opinion opinion)
 			throws IOException {
 		Document doc = new Document();
-		doc.add(new StringField("marcaModelo", opinion.getMarcaModelo(),
-				Field.Store.YES));
+		doc.add(new StringField("marca", opinion.getMarca(),Field.Store.YES));
+		doc.add(new StringField("modelo", opinion.getModelo(),Field.Store.YES));
 		doc.add(new StringField("author", opinion.getAuthor(), Field.Store.YES));
 		doc.add(new TextField("opinion", opinion.getOpinion(), Field.Store.YES));
 		doc.add(new TextField("lomejor", opinion.getLoMejor(), Field.Store.YES));
 		doc.add(new TextField("lopeor", opinion.getLoPeor(), Field.Store.YES));
-		doc.add(new IntField("valoracion", opinion.getValoracion(),
-				Field.Store.NO));
+		doc.add(new IntField("valoracion", opinion.getValoracion(), Field.Store.YES));
 		w.addDocument(doc);
 	}
 
 	private static Opinion docAdd(Document doc) {
 		Opinion opinion = new Opinion();
-		opinion.setMarcaModelo(doc.get("marcaModelo"));
+		opinion.setMarca(doc.get("marca"));
+		opinion.setModelo(doc.get("modelo"));
 		opinion.setAuthor(doc.get("author"));
 		opinion.setOpinion(doc.get("opinion"));
 		opinion.setLoMejor(doc.get("lomejor"));
 		opinion.setLoPeor(doc.get("lopeor"));
 		return opinion;
 	}
+	
+	private static int exist (Opinion opinion) {
+		int i;
+		Opinion opinion_tmp;
+		for (i = 0; i < opinion_lst.size(); i++) {
+			opinion_tmp = opinion_lst.get (i);
+			if (opinion_tmp.getMarca ().equals (opinion.getMarca ()) &&
+				opinion_tmp.getModelo ().equals (opinion.getModelo ()) &&
+				opinion_tmp.getAuthor ().equals (opinion.getAuthor ()) &&
+				opinion_tmp.getValoracion () == opinion.getValoracion () &&
+				opinion_tmp.getLoMejor ().equals (opinion.getLoMejor ()) &&
+				opinion_tmp.getLoPeor ().equals (opinion.getLoPeor ()) &&
+				opinion_tmp.getOpinion ().equals (opinion.getOpinion ()))
+				return 1;
+		}
+
+		return 0;
+	}  
 
 }

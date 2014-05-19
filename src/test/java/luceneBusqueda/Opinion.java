@@ -1,13 +1,17 @@
+package luceneBusqueda;
+
 public class Opinion {
-	private String marcaModelo;
+	private String marca;
+	private String modelo;
 	private int valoracion;
 	private String author;
 	private String opinion;
 	private String loMejor;
 	private String loPeor;
 	
-	public Opinion (String marcaModelo, int valoracion, String author, String opinion, String loMejor, String loPeor) {
-		this.marcaModelo = marcaModelo;
+	public Opinion (String marca, String modelo, int valoracion, String author, String opinion, String loMejor, String loPeor) {
+		this.marca = marca;
+		this.modelo = modelo;
 		this.valoracion = valoracion;
 		this.author = author;
 		this.opinion = opinion;
@@ -15,14 +19,23 @@ public class Opinion {
 		this.loPeor = loPeor;
 	}
 
-	public String getMarcaModelo () {
-		return this.marcaModelo;
+	public String getMarca () {
+		return this.marca;
 	}
 
-	public void setMarcaModelo (String marcaModelo) {
-		this.marcaModelo = marcaModelo;
+	public void setMarca (String marca) {
+		this.marca = marca;
+	}
+	
+	public String getModelo () {
+		return this.modelo;
 	}
 
+	public void setModelo (String modelo) {
+		this.modelo = modelo;
+	}
+
+	
 	public int getValoracion () {
 		return this.valoracion;
 	}
@@ -64,7 +77,9 @@ public class Opinion {
 	}
 
 	public String toString () {
-		return "marcaModelo: " + this.marcaModelo + "\n" +
+		return 
+			"marca: " + this.marca + "\n" +
+			"modelo: " + this.modelo + "\n" +
 			"valoracion: " + this.valoracion + "\n" +
 			"author: " + this.author + "\n" +
 			"opinion: " + this.opinion + "\n" +
